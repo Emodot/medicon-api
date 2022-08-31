@@ -1,0 +1,6 @@
+{
+  "env": {
+    "MONGO_ATLAS_PW": "medicon-api",
+    "JWT_KEY": "password"
+  }
+}
