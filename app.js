@@ -35,6 +35,10 @@ app.use('/patients', patientRoutes);
 app.use('/appointments', appointmentRoutes);
 app.use('/user', userRoutes);
 
+app.get('', (req,res) => {
+  res.send('its working');
+})
+
 app.use((req, res, next) => {
   const error = new Error('Not Found');
   error.status = 404;
