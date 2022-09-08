@@ -1,20 +1,27 @@
+const compression = require('compression')
 const express = require('express');
 const app = express();
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
+
+app.use(compression());
 const patientRoutes = require('./api/routes/patients');
 const appointmentRoutes = require('./api/routes/appointments');
 const userRoutes = require('./api/routes/user');
 
-mongoose.connect(
-  "mongodb+srv://medicon-api:" + process.env.MONGO_ATLAS_PW + "@medicon-api.sb6d2hl.mongodb.net/?retryWrites=true&w=majority"
-)
+
+mongoose.connect(`mongodb+srv://medicon-api:${process.env.MONGO_ATLAS_PW}@medicon-api.sb6d2hl.mongodb.net/?retryWrites=true&w=majority`,{
+    useNewUrlParser:true,
+    useUnifiedTopology:true
+}).then(() => console.log('MongoDB connected...'))
+.catch(err => console.log(err));
 
 mongoose.Promise = global.Promise;
 
-app.use(morgan('dev'));
+// setup the logger
+app.use(morgan('tiny'));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
@@ -36,7 +43,7 @@ app.use('/appointments', appointmentRoutes);
 app.use('/user', userRoutes);
 
 app.get('', (req,res) => {
-  res.send('its working');
+  return res.send('its working');
 })
 
 app.use((req, res, next) => {

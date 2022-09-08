@@ -1,106 +1,81 @@
-const mongoose = require('mongoose')
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const User = require('../models/user');
 
-const User = require('../models/user')
-
-exports.signup = (req, res, next) => {
-  User.find({email: req.body.email})
-  .exec()
-  .then(user => {
-    if (user.length >= 1) {
-      return res.status(409).json({
-        message: 'User already Exits'
-      })
-    } else {
-      bcrypt.hash(req.body.password, 10, (err, hash) => {
-        if (err) {
-          return res.status(500).json({
-            error:err
-          });
-        } else {
-          const user = new User({
-            _id: new mongoose.Types.ObjectId(),
-            name: req.body.name,
-            email: req.body.email,
-            password: hash
-          })
-          user
-            .save()
-            .then(result => {
-              res.status(201).json({
-                message: 'User Created',
-                user: result
-              })
-            })
-            .catch(err => {
-              console.log(err);
-              res.status(500).json({
-                error: err
-              })
-            })
-          }
-      })
+const signup = async (req, res, next) => {
+  try {
+    const email = req.body.email;
+    const password = req.body.password;
+    const name = req.body.name;
+    const finduser = await User.findOne({email}).exec();
+    if (finduser) {
+      throw new Error('User already Exist');
     }
-  })
+    const user = new User({
+      name,
+      email,
+      password
+    });
+
+    //Generate token
+    const token = await user.generateTokens();
+    if (!token){
+      throw new Error('Sorry, Having some Issues Logging in.....');
+    }
+    const save = await user.save();
+    res.json({token,data:save,error:false,statusText:'User Created Successfully'});
+
+  } catch(e){
+    return res.send({"errorMsg":e.message,errorStatus:500,error:true});
+  }
+
 }
 
-exports.login = (req, res, next) => {
-  User.find({ email: req.body.email })
-    .exec()
-    .then(user => {
-      if (user.length < 1) {
-        return res.status(401).json({
-          message: 'User not found'
-        })
-      }
-      bcrypt.compare(req.body.password, user[0].password, (err, result) => {
-        if (err) {
-          return res.status(401).json({
-            message: 'Auth Failed'
-          });
-        }
-        if (result) {
-          const token = jwt.sign({
-            email: user[0].email,
-            userId: user[0]._id
-          }, 
-          process.env.JWT_KEY,
-          {
-            expiresIn: "1h"
-          }
-          );
-          return res.status(200).json({
-            message: 'Auth Succesful',
-            token: token
-          })
-        }
-        res.status(401).json({
-          message: 'Auth Failed'
-        })
-      })
-    })
-    .catch(err => {
-      console.log(err);
-      res.status(500).json({
-        error: err
-      });
-    });
+const login = async (req,res)=> {
+  try {
+  const allowedField = ['email','password'];
+  const body = req.body;
+  const keys = Object.keys(body);
+  const isKey = keys.filter(key=>!allowedField.includes(key));
+
+  const theAffectedKey = isKey[0];
+
+  if ( isKey.length > 0 ) {
+      throw new Error(`${theAffectedKey } is not valid, below are the list of Accepted Fields '${allowedField}' `);
+  }
+
+  //Declaring Variable
+  const email = req.body.email;
+  const password = req.body.password;
+
+  //Check if User is in the Database
+  const isUser = await User.checkCredentials(email,password);
+  if (!isUser){
+    throw new Error('Invalid login credentials');
+  }
+
+  //Generate token
+  const token = await isUser.generateTokens();
+  if (!token){
+    throw new Error('Sorry, We are having Issues Logging you in');
+  }
+
+  return res.status(200).json({
+    message: 'Auth Succesful',
+    token: token
+  });
+
+  } catch(e) {
+    return res.send({"errorMsg":e.message,errorStatus:500,error:true});
+  }
+  
 }
 
-exports.delete_user = (req, res, next) => {
-  User.remove({ _id: req.params.userId })
-  .exec()
-  .then(result => {
-    res.status(200).json({
-      message: 'User Deleted',
-      result
-    })
-  })
-  .catch(err => {
-    console.log(err);
-    res.status(500).json({
-      error: err
-    });
+const delete_user = async (req, res, next) => {
+  const user = await User.findById(req.id);
+  const result = await user.remove(); //remove user
+  res.status(200).json({
+    message: 'User Deleted',
+    result
   });
 }
+
+module.exports = {signup,login,delete_user} ;
