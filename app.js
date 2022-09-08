@@ -5,6 +5,12 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
+//Explaining Some terms
+// Morgan is used for logging http errors
+//Compression compress the body of every request therefore optimizing the code and reduce latency
+//When you get this code , delete your node modules and do npm install
+// Install redix on your system to so that redis cache can work effectively
+//If you have any question feel free to contact me
 
 app.use(compression());
 const patientRoutes = require('./api/routes/patients');
