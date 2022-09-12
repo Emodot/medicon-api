@@ -4,6 +4,7 @@ const app = express();
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const cors = require ('cors');
 
 //Explaining Some terms
 // Morgan is used for logging http errors
@@ -13,6 +14,7 @@ const mongoose = require('mongoose');
 //If you have any question feel free to contact me
 
 app.use(compression());
+app.use(cors());
 const patientRoutes = require('./api/routes/patients');
 const appointmentRoutes = require('./api/routes/appointments');
 const userRoutes = require('./api/routes/user');
